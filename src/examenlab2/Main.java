@@ -11,11 +11,9 @@ import java.awt.event.WindowEvent;
 
 public class Main {
     public static void main(String[] args) {
-        // Usamos el Look and Feel del sistema para un aspecto nativo
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch(Exception e) {
-            // Si ocurre algún error, se utiliza el look and feel por defecto
         }
 
         SwingUtilities.invokeLater(() -> {
@@ -24,22 +22,19 @@ public class Main {
             JFrame frame = new JFrame("Panel de Control - Usuarios PSN");
             frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             frame.setSize(600, 500);
-            frame.setLocationRelativeTo(null); // Centrar la ventana
+            frame.setLocationRelativeTo(null);
 
-            // Al cerrar, se cierra el archivo y luego se finaliza la aplicación
             frame.addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent e) {
                     psn.closeFile();
                     System.exit(0);
                 }
             });
-
-            // Panel principal con BoxLayout vertical y un fondo claro
+  
             JPanel mainPanel = new JPanel();
             mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-            mainPanel.setBackground(new Color(245, 245, 245)); // Fondo claro
+            mainPanel.setBackground(new Color(245, 245, 245));
 
-            // Encabezado
             JPanel headerPanel = new JPanel();
             headerPanel.setBackground(new Color(220, 220, 220));
             JLabel headerLabel = new JLabel("Gestión de Usuarios PSN");
@@ -47,30 +42,27 @@ public class Main {
             headerLabel.setForeground(Color.BLACK);
             headerPanel.add(headerLabel);
 
-            // Panel de botones con GridLayout
             JPanel buttonPanel = new JPanel(new GridLayout(2, 2, 15, 15));
             buttonPanel.setBackground(new Color(245, 245, 245));
             buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-            // Botones en español con colores vivos y texto en negro
             JButton btnAddUser = new JButton("Agregar Usuario");
-            styleButton(btnAddUser, new Color(102, 204, 0)); // Verde
+            styleButton(btnAddUser, new Color(102, 204, 0));
 
             JButton btnDeactivateUser = new JButton("Desactivar Usuario");
-            styleButton(btnDeactivateUser, new Color(204, 0, 0)); // Rojo
+            styleButton(btnDeactivateUser, new Color(204, 0, 0));
 
             JButton btnAddTrophy = new JButton("Agregar Trofeo");
-            styleButton(btnAddTrophy, new Color(0, 153, 153)); // Teal
+            styleButton(btnAddTrophy, new Color(0, 153, 153));
 
             JButton btnShowInfo = new JButton("Mostrar Información");
-            styleButton(btnShowInfo, new Color(255, 140, 0)); // Naranja
+            styleButton(btnShowInfo, new Color(255, 140, 0));
 
             buttonPanel.add(btnAddUser);
             buttonPanel.add(btnDeactivateUser);
             buttonPanel.add(btnAddTrophy);
             buttonPanel.add(btnShowInfo);
 
-            // Pie de página con etiqueta de estado
             JPanel footerPanel = new JPanel();
             footerPanel.setBackground(new Color(220, 220, 220));
             JLabel statusLabel = new JLabel("Listo");
@@ -78,14 +70,12 @@ public class Main {
             statusLabel.setForeground(Color.BLACK);
             footerPanel.add(statusLabel);
 
-            // Agregar componentes al mainPanel
             mainPanel.add(headerPanel);
             mainPanel.add(Box.createVerticalStrut(20));
             mainPanel.add(buttonPanel);
             mainPanel.add(Box.createVerticalGlue());
             mainPanel.add(footerPanel);
 
-            // Acciones para cada botón
             btnAddUser.addActionListener(e -> {
                 String user = JOptionPane.showInputDialog(frame, "Ingrese el nombre de usuario:");
                 if(user != null && !user.trim().isEmpty()){
@@ -122,7 +112,7 @@ public class Main {
                     statusLabel.setText("Operación cancelada o campo vacío.");
                     return;
                 }
-                String[] trophyTypes = {"BRONZE", "SILVER", "GOLD", "PLATINUM"};
+                String[] trophyTypes = {"BRONCE", "PLATA", "ORO", "PLATINO"};
                 String type = (String) JOptionPane.showInputDialog(frame, "Seleccione el tipo de trofeo:",
                         "Tipo de Trofeo", JOptionPane.QUESTION_MESSAGE, null, trophyTypes, trophyTypes[0]);
                 if(type == null || type.trim().isEmpty()){
@@ -148,14 +138,12 @@ public class Main {
         });
     }
 
-    // Método para estilizar los botones (texto en negro)
     private static void styleButton(JButton button, Color bgColor) {
-        button.setOpaque(true);          // Para que respete el color de fondo
-        button.setBackground(bgColor);   // Color de fondo del botón
-        button.setForeground(Color.BLACK); // Color de texto en negro
+        button.setOpaque(true);
+        button.setBackground(bgColor);
+        button.setForeground(Color.BLACK);
         button.setFont(new Font("Verdana", Font.BOLD, 16));
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
     }
 }
-

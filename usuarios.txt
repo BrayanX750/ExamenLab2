@@ -3,3 +3,6 @@ Username: User1 | Activo: true | Puntos: 0 | Trofeos: 0
 Username: Carlos1 | Activo: true | Puntos: 0 | Trofeos: 0
 Username: user1 | Activo: true | Puntos: 0 | Trofeos: 0
 Username: owen | Activo: true | Puntos: 0 | Trofeos: 0
+Username: Brayan1 | Activo: true | Puntos: 0 | Trofeos: 0
+Username: hola | Activo: true | Puntos: 0 | Trofeos: 0
+Username: brayan2 | Activo: true | Puntos: 0 | Trofeos: 0
