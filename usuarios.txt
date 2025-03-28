@@ -1,3 +1,5 @@
 Username: Carlos1 | Activo: true | Puntos: 0 | Trofeos: 0
 Username: User1 | Activo: true | Puntos: 0 | Trofeos: 0
 Username: Carlos1 | Activo: true | Puntos: 0 | Trofeos: 0
+Username: user1 | Activo: true | Puntos: 0 | Trofeos: 0
+Username: owen | Activo: true | Puntos: 0 | Trofeos: 0

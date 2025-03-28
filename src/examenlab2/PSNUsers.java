@@ -9,197 +9,234 @@ import java.util.Date;
 import javax.swing.JOptionPane;
 
 public class PSNUsers {
-    private RandomAccessFile file;
+    // 1) Variable "psn" para gestionar el archivo
+    private RandomAccessFile psn;
+    // 2) Variable "users" (HashTable) para manejar todos los usuarios en memoria
     private HashTable users;
 
     public PSNUsers() {
         try {
-            file = new RandomAccessFile("psn.dat", "rw");
-            users = new HashTable(); 
+            // Se abre (o crea) el archivo "psn.dat"
+            psn = new RandomAccessFile("psn.dat", "rw");
+            users = new HashTable();
             reloadHashTable();
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error al abrir el archivo.");
+            JOptionPane.showMessageDialog(null, "Error al abrir el archivo: " + e.getMessage());
         }
     }
 
+    /**
+     * Carga la tabla de usuarios en memoria desde el archivo "psn.dat".
+     */
     private void reloadHashTable() {
         try {
-            file.seek(0);
-            while (file.getFilePointer() < file.length()) {
-                long pos = file.getFilePointer();
-                String username = file.readUTF();
-                boolean activo = file.readBoolean();
-                int puntos = file.readInt();
-                int trofeos = file.readInt();
-                int cantidad = file.readInt();
+            if (psn.length() == 0) {
+                // Si el archivo está vacío, no hay nada que cargar
+                return;
+            }
+            psn.seek(0);
+            while (psn.getFilePointer() < psn.length()) {
+                long pos = psn.getFilePointer();
+                String username = psn.readUTF();
+                boolean activo = psn.readBoolean();
+                int puntos = psn.readInt();
+                int trofeos = psn.readInt();
+                int cantidad = psn.readInt();
 
+                // Solo se agrega a la tabla en memoria si está activo
                 if (activo) {
                     users.add(username, pos);
                 }
 
-                // Saltar los registros de trofeos de este usuario
+                // Saltar la información de trofeos
                 for (int i = 0; i < cantidad; i++) {
-                    file.readUTF(); // username
-                    file.readUTF(); // tipo
-                    file.readUTF(); // juego
-                    file.readUTF(); // nombre trofeo
-                    file.readUTF(); // fecha
+                    psn.readUTF(); // username (trofeo)
+                    psn.readUTF(); // tipo
+                    psn.readUTF(); // juego
+                    psn.readUTF(); // nombre del trofeo
+                    psn.readUTF(); // fecha
                 }
             }
+        } catch (EOFException eof) {
+            // Se llegó al final del archivo normalmente, sin problemas
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error al cargar usuarios.");
+            JOptionPane.showMessageDialog(null, "Error al cargar usuarios: " + e.getMessage());
         }
     }
 
+    /**
+     * Agrega un usuario nuevo al archivo y a la tabla en memoria.
+     */
     public void addUser(String username) {
         try {
+            // Primero se busca en la HashTable (users)
             if (users.search(username) != -1) {
                 JOptionPane.showMessageDialog(null, "El usuario ya existe.");
                 return;
             }
 
-            // Escribir en el archivo binario psn.dat
-            file.seek(file.length());
-            long pos = file.getFilePointer();
-            file.writeUTF(username);
-            file.writeBoolean(true); // activo
-            file.writeInt(0);       // puntos
-            file.writeInt(0);       // trofeos
-            file.writeInt(0);       // cantidad trofeos escritos
+            // Si no existe en memoria, se agrega al final del archivo
+            psn.seek(psn.length());
+            long pos = psn.getFilePointer();
+            psn.writeUTF(username);
+            psn.writeBoolean(true);  // activo
+            psn.writeInt(0);         // puntos
+            psn.writeInt(0);         // trofeos
+            psn.writeInt(0);         // cantidad trofeos escritos
+
+            // Forzamos que se escriban los cambios en disco
+            psn.getChannel().force(true);
+
+            // Se actualiza la tabla en memoria
             users.add(username, pos);
 
-            // Escribir en el archivo de texto "usuarios.txt"
-            // Se abre en modo append para que cada nuevo usuario se agregue al final.
+            // (Opcional) Agregar registro en archivo de texto usuarios.txt
             try (FileWriter fw = new FileWriter("usuarios.txt", true);
                  BufferedWriter bw = new BufferedWriter(fw);
                  PrintWriter out = new PrintWriter(bw)) {
-                // Formateamos la información del usuario a guardar
                 out.println("Username: " + username + " | Activo: true | Puntos: 0 | Trofeos: 0");
             } catch (IOException e) {
-                JOptionPane.showMessageDialog(null, "Error al escribir en el archivo de texto.");
+                JOptionPane.showMessageDialog(null, "Error al escribir en archivo de texto: " + e.getMessage());
             }
 
             JOptionPane.showMessageDialog(null, "Usuario '" + username + "' agregado correctamente.");
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error al agregar usuario.");
+            JOptionPane.showMessageDialog(null, "Error al agregar usuario: " + e.getMessage());
         }
     }
 
+    /**
+     * Desactiva un usuario en el archivo y lo quita de la tabla en memoria.
+     */
     public void deactivateUser(String username) {
         try {
+            // Se busca en la tabla en memoria
             long pos = users.search(username);
             if (pos == -1) {
                 JOptionPane.showMessageDialog(null, "Usuario no encontrado.");
                 return;
             }
 
-            file.seek(pos);
-            file.readUTF();           // saltar username
-            file.writeBoolean(false);  // cambiar activo a false
-            users.remove(username);
+            // Si está en memoria, se actualiza el archivo para desactivarlo
+            psn.seek(pos);
+            psn.readUTF();       // saltar el username
+            psn.writeBoolean(false);  // marcar activo como false
+            users.remove(username);   // quitar de la tabla en memoria
 
-            JOptionPane.showMessageDialog(null, "Usuario '" + username + "' desactivado correctamente.");
+            psn.getChannel().force(true);
+
+            JOptionPane.showMessageDialog(null, "Usuario '" + username + "' desactivado.");
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error al desactivar usuario.");
+            JOptionPane.showMessageDialog(null, "Error al desactivar usuario: " + e.getMessage());
         }
     }
 
+    /**
+     * Agrega un trofeo a un usuario. Se buscan los datos en memoria (HashTable),
+     * luego se actualiza el archivo y, si todo está bien, se mantiene la referencia
+     * en memoria.
+     */
     public void addTrophieTo(String username, String trophyGame, String trophyName, Trophy type) {
         try {
+            // Se busca la posición del usuario en memoria
             long pos = users.search(username);
             if (pos == -1) {
                 JOptionPane.showMessageDialog(null, "Usuario no encontrado.");
                 return;
             }
 
-            file.seek(pos);
-            String userInFile = file.readUTF();  // leer username
-            long posAfterUsername = file.getFilePointer(); // posición donde está el boolean
-            boolean activo = file.readBoolean();
-            int puntos = file.readInt();
-            int trofeos = file.readInt();
-            int cantidad = file.readInt();
+            // Actualizar la información en el archivo
+            psn.seek(pos);
+            psn.readUTF();  // username
+            long posAfterUsername = psn.getFilePointer();
+            boolean activo = psn.readBoolean();
+            int puntos = psn.readInt();
+            int trofeos = psn.readInt();
+            int cantidad = psn.readInt();
 
-            // Actualizar valores
             puntos += type.getPuntos();
             trofeos++;
             cantidad++;
 
-            // Regresar a la posición después del username para actualizar el registro
-            file.seek(posAfterUsername);
-            file.writeBoolean(activo); 
-            file.writeInt(puntos);
-            file.writeInt(trofeos);
-            file.writeInt(cantidad);
+            // Escribir los datos actualizados
+            psn.seek(posAfterUsername);
+            psn.writeBoolean(activo);
+            psn.writeInt(puntos);
+            psn.writeInt(trofeos);
+            psn.writeInt(cantidad);
 
-            // Mover el puntero al final del archivo para agregar la información del trofeo
-            file.seek(file.length());
-            file.writeUTF(username);
-            file.writeUTF(type.name());
-            file.writeUTF(trophyGame);
-            file.writeUTF(trophyName);
-            file.writeUTF(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
+            // Escribir la info del trofeo al final del archivo
+            psn.seek(psn.length());
+            psn.writeUTF(username);
+            psn.writeUTF(type.name());
+            psn.writeUTF(trophyGame);
+            psn.writeUTF(trophyName);
+            psn.writeUTF(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
+
+            psn.getChannel().force(true);
 
             JOptionPane.showMessageDialog(null, 
-                "Trofeo '" + trophyName + "' agregado correctamente al usuario '" + username + "'.");
+                "Trofeo '" + trophyName + "' agregado al usuario '" + username + "'.");
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error al agregar trofeo.");
+            JOptionPane.showMessageDialog(null, "Error al agregar trofeo: " + e.getMessage());
         }
     }
 
+    /**
+     * Muestra la información de un usuario (búsqueda en la tabla en memoria).
+     */
     public void playerInfo(String username) {
         try {
+            // Se busca la posición del usuario en memoria
             long pos = users.search(username);
             if (pos == -1) {
                 JOptionPane.showMessageDialog(null, "Usuario no encontrado.");
                 return;
             }
 
-            file.seek(pos);
-            String name = file.readUTF();   // username
-            boolean activo = file.readBoolean();
-            int puntos = file.readInt();
-            int trofeos = file.readInt();
-            int cantidad = file.readInt();
+            // Se leen los datos del archivo en esa posición
+            psn.seek(pos);
+            String name = psn.readUTF();
+            boolean activo = psn.readBoolean();
+            int puntos = psn.readInt();
+            int trofeos = psn.readInt();
+            int cantidad = psn.readInt();
 
-            // Construir mensaje con info general
             StringBuilder sb = new StringBuilder();
             sb.append("=== INFORMACIÓN DEL USUARIO ===\n")
               .append("Username: ").append(name).append("\n")
               .append("Activo: ").append(activo ? "Sí" : "No").append("\n")
               .append("Puntos: ").append(puntos).append("\n")
-              .append("Trofeos Totales: ").append(trofeos).append("\n\n");
+              .append("Trofeos Totales: ").append(trofeos).append("\n\n")
+              .append("=== TROFEOS DEL USUARIO ===\n");
 
-            // Agregar la información de cada trofeo en el orden solicitado
-            sb.append("=== TROFEOS DEL USUARIO ===\n");
             for (int i = 0; i < cantidad; i++) {
-                String u = file.readUTF();
-                String tipo = file.readUTF();
-                String juego = file.readUTF();
-                String nombreTrofeo = file.readUTF();
-                String fecha = file.readUTF();
+                String u = psn.readUTF();        // username del trofeo
+                String tipo = psn.readUTF();     // tipo de trofeo
+                String juego = psn.readUTF();    // nombre del juego
+                String nombreTrofeo = psn.readUTF(); // nombre del trofeo
+                String fecha = psn.readUTF();    // fecha
 
-                sb.append("username: ").append(u).append("\n")
-                  .append("tipo del trofeo: ").append(tipo).append("\n")
-                  .append("nombre del juego: ").append(juego).append("\n")
-                  .append("nombre del trofeo: ").append(nombreTrofeo).append("\n")
-                  .append("fecha en que se ganó: ").append(fecha).append("\n\n");
+                sb.append("Username: ").append(u).append("\n")
+                  .append("Tipo del trofeo: ").append(tipo).append("\n")
+                  .append("Juego: ").append(juego).append("\n")
+                  .append("Trofeo: ").append(nombreTrofeo).append("\n")
+                  .append("Fecha: ").append(fecha).append("\n\n");
             }
-
             JOptionPane.showMessageDialog(null, sb.toString());
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error al mostrar la info.");
+            JOptionPane.showMessageDialog(null, "Error al mostrar la información: " + e.getMessage());
         }
     }
 
     /**
-     * Cierra el archivo para asegurarnos de que los datos queden
-     * guardados correctamente.
+     * Cierra el archivo "psn.dat" para liberar recursos.
      */
     public void closeFile() {
-        if (file != null) {
+        if (psn != null) {
             try {
-                file.close();
+                psn.getChannel().force(true);
+                psn.close();
             } catch (IOException e) {
                 System.err.println("Error al cerrar el archivo: " + e.getMessage());
             }

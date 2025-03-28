@@ -13,5 +13,5 @@ public class Entry {
         this.username = username;
         this.pos = pos;
         this.next = null;
-    }
+    }  
 }
