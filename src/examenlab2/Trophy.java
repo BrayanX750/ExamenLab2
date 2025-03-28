@@ -4,10 +4,17 @@
  */
 package examenlab2;
 
-/**
- *
- * @author Usuario
- */
-class Trophy {
-    
+public enum Trophy {
+    BRONZE(10), SILVER(20), GOLD(30), PLATINUM(50);
+
+    private int puntos;
+
+    Trophy(int puntos) {
+        this.puntos = puntos;
+    }
+
+    public int getPuntos() {
+        return puntos;
+    }
 }
+
