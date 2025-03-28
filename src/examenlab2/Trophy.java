@@ -5,7 +5,7 @@
 package examenlab2;
 
 public enum Trophy {
-    BRONCE(10), PLATA(20), ORO(30), PLATINO(50);
+    BRONCE(1), PLATA(2), ORO(3), PLATINO(5);
 
     private int puntos;
 

@@ -39,7 +39,7 @@ public class Main {
             mainPanel.setBackground(new Color(245, 245, 245));
 
             JPanel headerPanel = new JPanel();
-            headerPanel.setBackground(new Color(220, 220, 220));
+            headerPanel.setBackground(new Color(220, 220, 220));  
             JLabel headerLabel = new JLabel("Gestión de Usuarios PSN");
             headerLabel.setFont(new Font("Verdana", Font.BOLD, 26));
             headerLabel.setForeground(Color.BLACK);
