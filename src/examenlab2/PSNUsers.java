@@ -24,9 +24,7 @@ public class PSNUsers {
 
     private void reloadHashTable() {
         try {
-            if (psn.length() == 0) {
-                return;
-            }
+            if (psn.length() == 0) return;
             psn.seek(0);
             while (psn.getFilePointer() < psn.length()) {
                 long pos = psn.getFilePointer();
@@ -67,13 +65,7 @@ public class PSNUsers {
             psn.writeInt(0);
             psn.getChannel().force(true);
             users.add(username, pos);
-            try (FileWriter fw = new FileWriter("usuarios.txt", true);
-                 BufferedWriter bw = new BufferedWriter(fw);
-                 PrintWriter out = new PrintWriter(bw)) {
-                out.println("Username: " + username + " | Activo: true | Puntos: 0 | Trofeos: 0");
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(null, "Error al escribir en archivo de texto: " + e.getMessage());
-            }
+            updateTextFile();
             JOptionPane.showMessageDialog(null, "Usuario '" + username + "' agregado correctamente.");
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error al agregar usuario: " + e.getMessage());
@@ -92,6 +84,7 @@ public class PSNUsers {
             psn.writeBoolean(false);
             users.remove(username);
             psn.getChannel().force(true);
+            updateTextFile();
             JOptionPane.showMessageDialog(null, "Usuario '" + username + "' desactivado.");
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error al desactivar usuario: " + e.getMessage());
@@ -127,6 +120,7 @@ public class PSNUsers {
             psn.writeUTF(trophyName);
             psn.writeUTF(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
             psn.getChannel().force(true);
+            updateTextFile();
             JOptionPane.showMessageDialog(null, "Trofeo '" + trophyName + "' agregado al usuario '" + username + "'.");
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error al agregar trofeo: " + e.getMessage());
@@ -181,4 +175,48 @@ public class PSNUsers {
             }
         }
     }
+
+    public void updateTextFile() {
+    try (RandomAccessFile raf = new RandomAccessFile("psn.dat", "r");
+         FileWriter fw = new FileWriter("usuarios.txt");
+         BufferedWriter bw = new BufferedWriter(fw);
+         PrintWriter out = new PrintWriter(bw)) {
+
+        while (raf.getFilePointer() < raf.length()) {
+            String username = raf.readUTF();
+            boolean activo = raf.readBoolean();
+            int puntos = raf.readInt();
+            int trofeos = raf.readInt();
+            int cantidad = raf.readInt();
+
+            out.println("Username: " + username
+                    + " | Activo: " + activo
+                    + " | Puntos: " + puntos
+                    + " | Trofeos: " + trofeos);
+
+            for (int i = 0; i < cantidad; i++) {
+                String u = raf.readUTF();
+                String tipo = raf.readUTF();
+                String juego = raf.readUTF();
+                String nombreTrofeo = raf.readUTF();
+                String fecha = raf.readUTF();
+
+                out.println("    Trofeo -> Username: " + u
+                        + " | Tipo: " + tipo
+                        + " | Juego: " + juego
+                        + " | Trofeo: " + nombreTrofeo
+                        + " | Fecha: " + fecha);
+            }
+            out.println();
+        }
+
+    } catch (EOFException eof) {
+       
+    } catch (IOException e) {
+       
+        JOptionPane.showMessageDialog(null, 
+            "Error al actualizar archivo de texto: " + e.getMessage());
+    }
+}
+
 }

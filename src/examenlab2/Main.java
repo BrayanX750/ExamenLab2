@@ -9,6 +9,9 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+//Agregue comentarios anteriormente para asi poder indicar que funcion cumple con lo que usted pide. Los quite para que el codigo sea mas limpio.
+
+
 public class Main {
     public static void main(String[] args) {
         try {
